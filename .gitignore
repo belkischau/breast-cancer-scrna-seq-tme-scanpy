@@ -1,0 +1,44 @@
+# ── Data ──────────────────────────────────────────────────
+data/raw/
+data/*.h5ad
+!data/processed/.gitkeep
+
+# ── Results (large image outputs) ─────────────────────────
+# Keep PNGs tracked for README previews; ignore heavy formats
+results/*.pdf
+results/*.svg
+
+# ── Reports ───────────────────────────────────────────────
+reports/*.html
+
+# ── Python / Jupyter ──────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.ipynb_checkpoints/
+*.ipynb_meta
+
+# ── Virtual environments ─────────────────────────────────
+.venv/
+venv/
+env/
+.conda/
+
+# ── IDE / OS ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Misc ──────────────────────────────────────────────────
+*.log
+*.tmp
+*.bak
