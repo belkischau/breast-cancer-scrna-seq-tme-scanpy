@@ -180,7 +180,10 @@ def _load_from_geo() -> ad.AnnData | None:
     print("[INFO] Extracting count matrices from archive …")
     try:
         with tarfile.open(archive, "r:gz") as tar:
-            tar.extractall(RAW_DIR, filter="data")
+            if sys.version_info >= (3, 12):
+                tar.extractall(RAW_DIR, filter="data")
+            else:
+                tar.extractall(RAW_DIR)
     except Exception as exc:
         print(f"[WARN] Extraction failed: {exc}")
         return None
@@ -198,6 +201,28 @@ def _load_from_geo() -> ad.AnnData | None:
             print(f"  ✓ Loaded {sample_name}: {adata_sample.n_obs} cells")
         except Exception as e:
             print(f"  ✗ Skipped {sample_name}: {e}")
+
+    if not adatas:
+        # Try GSE176078-style flat layout: count_matrix_sparse.mtx + genes/barcodes TSVs
+        mtx_file = next(RAW_DIR.rglob("count_matrix_sparse.mtx*"), None)
+        genes_file = next(RAW_DIR.rglob("count_matrix_genes.tsv*"), None)
+        barcodes_file = next(RAW_DIR.rglob("count_matrix_barcodes.tsv*"), None)
+        if mtx_file and genes_file and barcodes_file:
+            try:
+                from scipy.io import mmread
+                mat = mmread(str(mtx_file)).T  # MTX is genes×cells, transpose to cells×genes
+                genes = pd.read_csv(genes_file, header=None, sep="\t")[0].values
+                barcodes = pd.read_csv(barcodes_file, header=None, sep="\t")[0].values
+                adata = ad.AnnData(
+                    sp.csr_matrix(mat),
+                    obs=pd.DataFrame(index=barcodes),
+                    var=pd.DataFrame(index=genes),
+                )
+                adata.var_names_make_unique()
+                adatas.append(adata)
+                print(f"  ✓ Loaded sparse matrix: {adata.n_obs} cells × {adata.n_vars} genes")
+            except Exception as e:
+                print(f"  ✗ Failed to load sparse matrix: {e}")
 
     if not adatas:
         # Try reading as a single CSV/TSV if 10x format not found

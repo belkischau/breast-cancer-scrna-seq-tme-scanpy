@@ -1,6 +1,6 @@
 # ── Data ──────────────────────────────────────────────────
 data/raw/
-data/*.h5ad
+data/processed/*.h5ad
 !data/processed/.gitkeep
 
 # ── Results (large image outputs) ─────────────────────────
