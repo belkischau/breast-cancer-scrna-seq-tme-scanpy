@@ -293,6 +293,11 @@ def plot_umaps(adata: ad.AnnData) -> None:
     print(f"[PLOT] Saved → results/umap_leiden.png")
 
     # ── UMAP by patient ──────────────────────────────────────────────────
+    if "patient_id" not in adata.obs.columns:
+        # Extract patient ID from barcode prefix (e.g., "CID3586_AAGACCTCAGCATGAG" → "CID3586")
+        if adata.obs.index.str.contains("_").any():
+            adata.obs["patient_id"] = adata.obs.index.str.split("_").str[0]
+
     if "patient_id" in adata.obs.columns:
         fig, ax = plt.subplots(figsize=(10, 8))
         sc.pl.umap(adata, color="patient_id", ax=ax, show=False,
