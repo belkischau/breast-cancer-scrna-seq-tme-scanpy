@@ -79,9 +79,9 @@ def preprocess(adata: ad.AnnData) -> ad.AnnData:
     adata.raw = adata.copy()
 
     # ── Highly Variable Genes ─────────────────────────────────────────────
-    print("[STEP] Selecting top 2,000 highly variable genes (Seurat v3) …")
-    sc.pp.highly_variable_genes(
-        adata, n_top_genes=2000, flavor="seurat_v3",
+    print("[STEP] Selecting top 2,000 highly variable genes (Pearson residuals) …")
+    sc.experimental.pp.highly_variable_genes(
+        adata, n_top_genes=2000, flavor="pearson_residuals",
         subset=False, layer="raw_counts",
     )
     n_hvg = adata.var["highly_variable"].sum()
