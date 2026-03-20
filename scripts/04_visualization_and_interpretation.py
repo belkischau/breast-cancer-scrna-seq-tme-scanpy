@@ -145,7 +145,7 @@ def plot_composition_per_sample(adata: ad.AnnData) -> None:
     print("\n[PLOT] Generating composition per sample chart …")
 
     group_col = None
-    for col in ["patient_id", "sample", "condition"]:
+    for col in ["patient_id", "sample", "subtype", "condition"]:
         if col in adata.obs.columns:
             group_col = col
             break

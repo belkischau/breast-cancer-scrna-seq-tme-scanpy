@@ -8,14 +8,17 @@ Analyses performed:
   1. Marker genes per cell type (one-vs-rest Wilcoxon rank-sum)
   2. Cancer-specific DEGs (cancer epithelial vs. all other cell types)
   3. Condition-specific DEGs (tumor vs. normal within cancer epithelial)
-  4. Volcano plots for top DEGs
-  5. Marker validation with biological context
+  4. Subtype-specific DEGs (ER+, HER2+, TNBC — one-vs-rest)
+  5. Volcano plots for top DEGs
+  6. Marker validation with biological context
 
 Reads:   data/processed/breast_cancer_annotated.h5ad
 Writes:  data/processed/breast_cancer_de.h5ad
          results/deg_volcano.png
+         results/deg_volcano_<subtype>.png
          results/marker_dotplot.png
          results/top_markers_per_celltype.csv
+         results/subtype_degs.csv
 
 Usage:
     python scripts/03_de_analysis_and_markers.py
@@ -255,7 +258,62 @@ def tumor_vs_normal_de(adata: ad.AnnData) -> pd.DataFrame | None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 4. Volcano plot
+# 4. Subtype-specific DE (ER+, HER2+, TNBC)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def subtype_de(adata: ad.AnnData) -> pd.DataFrame | None:
+    """One-vs-rest DE across breast cancer subtypes (ER+, HER2+, TNBC)."""
+    print("\n" + "=" * 60)
+    print("SUBTYPE-SPECIFIC DE ANALYSIS (one-vs-rest)")
+    print("=" * 60)
+
+    if "subtype" not in adata.obs.columns:
+        print("  [WARN] No 'subtype' column found. Skipping.")
+        return None
+
+    subtypes = adata.obs["subtype"].dropna().unique()
+    if len(subtypes) < 2:
+        print(f"  [WARN] Only one subtype found ({subtypes}). Skipping.")
+        return None
+
+    print(f"  Subtypes: {list(subtypes)}")
+    for st in subtypes:
+        n = (adata.obs["subtype"] == st).sum()
+        print(f"    {st}: {n:,} cells")
+
+    sc.tl.rank_genes_groups(
+        adata,
+        groupby="subtype",
+        method="wilcoxon",
+        use_raw=True,
+        key_added="subtype_de",
+    )
+
+    result = sc.get.rank_genes_groups_df(adata, group=None, key="subtype_de")
+    sig = result[result["pvals_adj"] < 0.05].copy()
+
+    print(f"\n  Total DEGs (FDR < 0.05): {len(sig):,}")
+
+    for st in sorted(subtypes):
+        st_sig = sig[sig["group"] == st]
+        st_up = st_sig[st_sig["logfoldchanges"] > 1]
+        print(f"\n  ── {st}: {len(st_sig):,} DEGs ({len(st_up):,} upregulated, log2FC > 1) ──")
+        for _, row in st_up.nlargest(10, "scores").iterrows():
+            gene = row["names"]
+            bio = GENE_BIO_CONTEXT.get(gene, "")
+            bio_str = f"  — {bio}" if bio else ""
+            print(f"    {gene:<12s} log2FC={row['logfoldchanges']:>6.2f}  "
+                  f"padj={row['pvals_adj']:.2e}{bio_str}")
+
+    csv_path = RESULTS_DIR / "subtype_degs.csv"
+    result.to_csv(csv_path, index=False)
+    print(f"\n  Saved → {csv_path}")
+
+    return result
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# 5. Volcano plot
 # ──────────────────────────────────────────────────────────────────────────────
 
 def plot_volcano(
@@ -327,7 +385,7 @@ def plot_volcano(
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# 5. Dot plot of top markers
+# 6. Dot plot of top markers
 # ──────────────────────────────────────────────────────────────────────────────
 
 def plot_marker_dotplot(adata: ad.AnnData) -> None:
@@ -426,6 +484,17 @@ def main() -> None:
             title="Tumor vs. Normal Adjacent (Cancer Epithelial)",
             filename="deg_volcano_tumor_vs_normal.png",
         )
+
+    # ── Subtype-specific DE ────────────────────────────────────────────
+    subtype_result = subtype_de(adata)
+    if subtype_result is not None:
+        for sub in subtype_result["group"].unique():
+            sub_df = subtype_result[subtype_result["group"] == sub]
+            plot_volcano(
+                sub_df,
+                title=f"{sub} vs. Rest — Subtype DE",
+                filename=f"deg_volcano_{sub.replace('+', 'pos')}.png",
+            )
 
     # ── Dot plot ──────────────────────────────────────────────────────────
     try:
