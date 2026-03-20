@@ -59,11 +59,12 @@ biological interpretation.
 
 | Metric | Value |
 |--------|-------|
-| Total cells analyzed (full mode) | ~100,000 |
+| Total cells analyzed (full mode) | 98,594 |
 | Quick-test mode | ~5,000 cells |
-| Cell clusters identified | 10–15 |
-| Major cell types annotated | 8 (Cancer epithelial, T cells, B cells, Macrophages, Fibroblasts, Endothelial, NK cells, DCs) |
-| Differentially expressed genes | 5,000+ (cancer vs. immune, FDR < 0.05) |
+| Cell clusters / cell types identified | 24 |
+| Major cell type categories | 9 — Cancer Epithelial (10 subclusters), T cells (3), Fibroblasts (3), Macrophages, NK cells, B cells, Plasmablasts (2), Endothelial, Mast cells |
+| Marker tests run | 598,248 |
+| Significant markers (FDR < 0.05) | 212,680 (~35.5%) |
 | Known marker validation | ✅ All key markers confirmed in expected clusters |
 
 ### Representative Outputs
