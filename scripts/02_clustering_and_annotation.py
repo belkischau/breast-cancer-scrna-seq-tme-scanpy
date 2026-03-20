@@ -324,6 +324,15 @@ def plot_umaps(adata: ad.AnnData) -> None:
         plt.close(fig)
         print(f"[PLOT] Saved → results/umap_condition.png")
 
+    # ── UMAP by subtype ──────────────────────────────────────────────────
+    if "subtype" in adata.obs.columns:
+        fig, ax = plt.subplots(figsize=(10, 8))
+        sc.pl.umap(adata, color="subtype", ax=ax, show=False,
+                   title="Breast Cancer Subtype (TNBC / Luminal A / HER2+ / Normal)")
+        fig.savefig(RESULTS_DIR / "umap_subtype.png", dpi=150, bbox_inches="tight")
+        plt.close(fig)
+        print(f"[PLOT] Saved → results/umap_subtype.png")
+
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Main
