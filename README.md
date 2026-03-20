@@ -78,26 +78,36 @@ biological interpretation.
 ## 🧪 Biological Interpretation
 
 ### Tumor Heterogeneity
-Cancer epithelial clusters express classical markers (EPCAM, KRT19, KRT8/18)
-but segregate into subpopulations with distinct transcriptional programs —
-including proliferative (MKI67+, TOP2A+), hormone-responsive (ESR1+, PGR+),
-and basal-like (KRT5+, KRT14+) states — reflecting intra-tumor heterogeneity
-commonly observed in breast cancer.
+Ten transcriptionally distinct cancer epithelial subclusters comprise ~26.5% of
+cells. Top markers vs. all other cell types: KRT19 (log2fc=7.1), ELF3 (6.7),
+CLDN4 (6.4), KRT18 (6.3), CD24 (5.9), and KRT8 (5.8). Cancer_Epithelial_10
+expresses AZGP1, AGR2, and AGR3 — an ER+ luminal signature consistent with
+hormone receptor-positive disease. Notably, cancer cells downregulate MHC-I
+components HLA-B (log2fc=−3.2) and B2M (−2.8) relative to all other cell types,
+suggesting immune evasion via antigen presentation loss.
 
 ### Immune Infiltration & Evasion
-- **T cell compartment**: CD8+ cytotoxic T cells co-express exhaustion markers
-  (PDCD1, HAVCR2/TIM-3, LAG3), suggesting chronic antigen stimulation
-- **Macrophages**: Tumor-associated macrophages (TAMs) show M2 polarization
-  (CD163+, MRC1+), associated with immunosuppression
-- **PD-L1 (CD274)**: Elevated on cancer epithelial cells, consistent with
-  immune checkpoint evasion
+- **T cells** are the dominant immune population (~29.1% combined across three
+  subclusters). T_cells_3 co-expresses CXCR4 (log2fc=5.18) and MALAT1,
+  consistent with a tissue-homing or exhausted phenotype
+- **Checkpoint signalling**: PD-1 (PDCD1) and PD-L1 (CD274) expression
+  indicates active immune checkpoint activity in the TME
+- **Myeloid/innate compartment**: Macrophages (9.4%), NK cells (6.1%, NKG7+),
+  and mast cells (1.1%)
+- **Humoral immunity**: Plasmablasts (~3.7%) and B cells (3.5%) together
+  represent ~7.2% of the TME; MS4A1/CD20 (log2fc=8.7) is the top B-cell marker
 
 ### Stromal Microenvironment
-- **Cancer-Associated Fibroblasts (CAFs)**: Express COL1A1, FAP, ACTA2;
-  subtypes include inflammatory CAFs (iCAFs: IL6+, CXCL12+) and myofibroblastic
-  CAFs (myCAFs: ACTA2+, TAGLN+)
-- **Endothelial cells**: PECAM1+, VWF+ with angiogenic signatures (VEGFA
-  pathway activation) supporting tumor vascularization
+- **Cancer-Associated Fibroblasts (CAFs)**: Three fibroblast subclusters
+  (~12.9% of cells) express COL1A1, FAP, and ACTA2 — markers of activated,
+  pro-tumorigenic stroma
+- **Endothelial cells**: 7.6% of cells, PECAM1+/VWF+, indicating active
+  angiogenesis supporting tumor vascularization
+
+### Molecular Subtypes
+ER+, HER2+, and TNBC each show distinct transcriptional programmes. ER+ tumours
+are enriched for AZGP1, AGR2, AGR3, ANKRD30A, and XIST relative to other
+subtypes, consistent with luminal identity and oestrogen-driven transcription.
 
 ---
 
@@ -213,9 +223,12 @@ jupyter notebook notebooks/01_breast_cancer_scrna_tme_analysis.ipynb
 1. Wu, S.Z., Al-Eryani, G., Roden, D.L. et al. A single-cell and spatially
    resolved atlas of human breast cancers. *Nat Genet* **53**, 1334–1347 (2021).
    https://doi.org/10.1038/s41588-021-00911-1
-2. Wolf, F.A., Angerer, P. & Theis, F.J. SCANPY: large-scale single-cell gene
+2. Pal, B., Chen, Y., Vaillant, F. et al. A single-cell RNA expression atlas of
+   normal, preneoplastic and tumorigenic states in the human breast. *EMBO J*
+   **40**, e107333 (2021). https://doi.org/10.15252/embj.2020107333
+3. Wolf, F.A., Angerer, P. & Theis, F.J. SCANPY: large-scale single-cell gene
    expression data analysis. *Genome Biology* **19**, 15 (2018).
-3. Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden. *Sci Rep*
+4. Traag, V.A., Waltman, L. & van Eck, N.J. From Louvain to Leiden. *Sci Rep*
    **9**, 5233 (2019).
 
 ---
