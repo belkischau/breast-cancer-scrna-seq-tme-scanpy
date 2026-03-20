@@ -34,6 +34,7 @@ import scanpy as sc
 import seaborn as sns
 
 warnings.filterwarnings("ignore", category=FutureWarning)
+warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Paths
