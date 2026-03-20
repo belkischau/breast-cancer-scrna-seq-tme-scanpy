@@ -13,6 +13,7 @@ Writes:  data/processed/breast_cancer_annotated.h5ad
 Usage:
     python scripts/02_clustering_and_annotation.py
     python scripts/02_clustering_and_annotation.py --resolution 1.0
+    python scripts/02_clustering_and_annotation.py --scan-resolution
 """
 
 from __future__ import annotations
@@ -27,6 +28,7 @@ import numpy as np
 import pandas as pd
 import scanpy as sc
 import seaborn as sns
+from sklearn.metrics import silhouette_score
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -89,7 +91,7 @@ def preprocess(adata: ad.AnnData) -> ad.AnnData:
 
     # ── Highly Variable Genes ─────────────────────────────────────────────
     print("[STEP] Selecting top 2,000 highly variable genes (Pearson residuals) …")
-    sc.experimental.pp.highly_variable_genes(
+    sc.pp.highly_variable_genes(
         adata, n_top_genes=2000, flavor="pearson_residuals",
         subset=False, layer="raw_counts",
     )
@@ -141,6 +143,109 @@ def cluster(adata: ad.AnnData, resolution: float = 1.0) -> ad.AnnData:
         print(f"       Cluster {cl}: {cnt:,} cells ({cnt/adata.n_obs*100:.1f}%)")
 
     return adata
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Resolution selection
+# ──────────────────────────────────────────────────────────────────────────────
+
+def find_best_resolution(
+    adata: ad.AnnData,
+    resolutions: list[float] | None = None,
+    use_rep: str = "X_pca",
+    max_cells_silhouette: int = 10_000,
+) -> float:
+    """
+    Scan a range of Leiden resolutions and return the one with the highest
+    silhouette score on the PCA embedding.
+
+    Parameters
+    ----------
+    adata:
+        AnnData with neighbors graph and PCA already computed.
+    resolutions:
+        List of resolutions to test. Defaults to a coarse grid from 0.1 to 2.0.
+    use_rep:
+        Embedding key in adata.obsm used to compute silhouette score.
+    max_cells_silhouette:
+        Subsample threshold — silhouette is O(n²); cap at this many cells.
+    """
+    print("\n" + "=" * 60)
+    print("LEIDEN RESOLUTION SCAN")
+    print("=" * 60)
+
+    if resolutions is None:
+        resolutions = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 1.0, 1.2, 1.5, 2.0]
+
+    embedding = adata.obsm[use_rep]
+
+    # Subsample index for silhouette if dataset is large
+    rng = np.random.default_rng(42)
+    if adata.n_obs > max_cells_silhouette:
+        sample_idx = rng.choice(adata.n_obs, size=max_cells_silhouette, replace=False)
+        print(f"  [INFO] Subsampling {max_cells_silhouette:,} cells for silhouette score "
+              f"(total: {adata.n_obs:,})")
+    else:
+        sample_idx = np.arange(adata.n_obs)
+
+    results = []
+    print(f"\n  {'Resolution':>12}  {'N clusters':>12}  {'Silhouette':>12}")
+    print("  " + "-" * 40)
+
+    for r in resolutions:
+        sc.tl.leiden(adata, resolution=r, key_added="leiden_scan",
+                     random_state=42, flavor="igraph", n_iterations=2)
+        labels = adata.obs["leiden_scan"]
+        n_clusters = labels.nunique()
+
+        if n_clusters < 2:
+            sil = float("nan")
+            print(f"  {r:>12.2f}  {n_clusters:>12d}  {'n/a (1 cluster)':>12}")
+        else:
+            sil = silhouette_score(
+                embedding[sample_idx], labels.iloc[sample_idx], metric="euclidean"
+            )
+            print(f"  {r:>12.2f}  {n_clusters:>12d}  {sil:>12.4f}")
+
+        results.append({"resolution": r, "n_clusters": n_clusters, "silhouette": sil})
+
+    # Clean up temporary column
+    del adata.obs["leiden_scan"]
+
+    df = pd.DataFrame(results)
+    valid = df.dropna(subset=["silhouette"])
+    best_row = valid.loc[valid["silhouette"].idxmax()]
+    best_resolution = float(best_row["resolution"])
+
+    print(f"\n  Best resolution: {best_resolution:.2f}  "
+          f"({int(best_row['n_clusters'])} clusters, "
+          f"silhouette={best_row['silhouette']:.4f})")
+
+    # ── Plot ──────────────────────────────────────────────────────────────
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+
+    ax1.plot(df["resolution"], df["n_clusters"], marker="o", color="steelblue")
+    ax1.axvline(best_resolution, color="tomato", linestyle="--", label=f"best={best_resolution:.2f}")
+    ax1.set_xlabel("Resolution")
+    ax1.set_ylabel("Number of clusters")
+    ax1.set_title("Clusters vs Resolution")
+    ax1.legend()
+
+    ax2.plot(valid["resolution"], valid["silhouette"], marker="o", color="seagreen")
+    ax2.axvline(best_resolution, color="tomato", linestyle="--", label=f"best={best_resolution:.2f}")
+    ax2.set_xlabel("Resolution")
+    ax2.set_ylabel("Silhouette score")
+    ax2.set_title("Silhouette Score vs Resolution")
+    ax2.legend()
+
+    fig.tight_layout()
+    out_path = RESULTS_DIR / "leiden_resolution_scan.png"
+    fig.savefig(out_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  [PLOT] Saved → results/leiden_resolution_scan.png")
+
+    return best_resolution
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -342,6 +447,8 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Cluster and annotate cell types.")
     parser.add_argument("--resolution", type=float, default=1.0,
                         help="Leiden clustering resolution (default: 1.0).")
+    parser.add_argument("--scan-resolution", action="store_true",
+                        help="Scan resolutions and pick the best by silhouette score.")
     args = parser.parse_args()
 
     if not INPUT_H5AD.exists():
@@ -356,7 +463,10 @@ def main() -> None:
 
     # Pipeline
     adata = preprocess(adata)
-    adata = cluster(adata, resolution=args.resolution)
+    resolution = args.resolution
+    if args.scan_resolution:
+        resolution = find_best_resolution(adata)
+    adata = cluster(adata, resolution=resolution)
     adata = annotate_cell_types(adata)
     verify_markers(adata)
     plot_umaps(adata)
