@@ -70,6 +70,15 @@ def preprocess(adata: ad.AnnData) -> ad.AnnData:
     print("PREPROCESSING & DIMENSIONALITY REDUCTION")
     print("=" * 60)
 
+    # ── Doublet Detection ─────────────────────────────────────────────────
+    print("\n[STEP] Doublet detection (Scrublet) …")
+    sc.pp.scrublet(adata, random_state=42)
+    n_doublets = adata.obs["predicted_doublet"].sum()
+    frac = n_doublets / adata.n_obs * 100
+    print(f"       Detected {n_doublets:,} doublets ({frac:.1f}%) — removing …")
+    adata = adata[~adata.obs["predicted_doublet"]].copy()
+    print(f"       Cells remaining after doublet removal: {adata.n_obs:,}")
+
     # ── Normalization ─────────────────────────────────────────────────────
     print("\n[STEP] Library-size normalization (10,000 CPM) + log1p …")
     sc.pp.normalize_total(adata, target_sum=1e4)
