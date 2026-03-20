@@ -44,6 +44,7 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 INPUT_H5AD = PROCESSED_DIR / "breast_cancer_qc.h5ad"
 OUTPUT_H5AD = PROCESSED_DIR / "breast_cancer_annotated.h5ad"
 PREPROCESSED_H5AD = PROCESSED_DIR / "breast_cancer_preprocessed.h5ad"
+METADATA_CSV = PROJECT_ROOT / "data" / "raw" / "Wu_etal_2021_BRCA_scRNASeq" / "metadata.csv"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Canonical marker genes for breast cancer TME cell types
@@ -94,7 +95,7 @@ def preprocess(adata: ad.AnnData) -> ad.AnnData:
 
     # ── Highly Variable Genes ─────────────────────────────────────────────
     print("[STEP] Selecting top 2,000 highly variable genes (Pearson residuals) …")
-    sc.pp.highly_variable_genes(
+    sc.experimental.pp.highly_variable_genes(
         adata, n_top_genes=2000, flavor="pearson_residuals",
         subset=False, layer="raw_counts",
     )
@@ -443,6 +444,27 @@ def plot_umaps(adata: ad.AnnData) -> None:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
+# Metadata integration
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _merge_metadata(adata: ad.AnnData) -> ad.AnnData:
+    """Join subtype and cell-type labels from Wu et al. metadata.csv into adata.obs."""
+    if "subtype" in adata.obs.columns:
+        return adata  # already merged (e.g. loaded from cached preprocessed h5ad)
+    if not METADATA_CSV.exists():
+        print(f"[WARN] metadata.csv not found at {METADATA_CSV}; subtype UMAP will be skipped.")
+        return adata
+    meta = pd.read_csv(METADATA_CSV, index_col=0)
+    cols = [c for c in ["subtype", "celltype_major", "celltype_minor"] if c in meta.columns]
+    adata.obs = adata.obs.join(meta[cols], how="left")
+    for c in cols:
+        if c in adata.obs.columns:
+            adata.obs[c] = adata.obs[c].astype("category")
+    print(f"[INFO] Merged metadata columns: {cols}")
+    return adata
+
+
+# ──────────────────────────────────────────────────────────────────────────────
 # Main
 # ──────────────────────────────────────────────────────────────────────────────
 
@@ -471,7 +493,9 @@ def main() -> None:
         print(f"[INFO] Loading cached preprocessed data from {PREPROCESSED_H5AD} …")
         adata = sc.read_h5ad(PREPROCESSED_H5AD)
         print(f"[INFO] Loaded: {adata.n_obs} cells × {adata.n_vars} genes")
+        adata = _merge_metadata(adata)
     else:
+        adata = _merge_metadata(adata)
         adata = preprocess(adata)
         adata.write_h5ad(PREPROCESSED_H5AD)
         print(f"[INFO] Saved preprocessed data → {PREPROCESSED_H5AD}")
