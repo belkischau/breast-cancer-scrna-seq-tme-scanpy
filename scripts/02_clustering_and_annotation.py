@@ -5,7 +5,8 @@
 Normalize, find HVGs, reduce dimensions, cluster, and annotate cell types.
 
 Reads:   data/processed/breast_cancer_qc.h5ad
-Writes:  data/processed/breast_cancer_annotated.h5ad
+Writes:  data/processed/breast_cancer_preprocessed.h5ad  (cache, skipped on re-runs)
+         data/processed/breast_cancer_annotated.h5ad
          results/umap_celltype.png
          results/umap_patient.png
          results/umap_condition.png
@@ -14,6 +15,7 @@ Usage:
     python scripts/02_clustering_and_annotation.py
     python scripts/02_clustering_and_annotation.py --resolution 1.0
     python scripts/02_clustering_and_annotation.py --scan-resolution
+    python scripts/02_clustering_and_annotation.py --reprocess
 """
 
 from __future__ import annotations
@@ -41,6 +43,7 @@ RESULTS_DIR = PROJECT_ROOT / "results"
 
 INPUT_H5AD = PROCESSED_DIR / "breast_cancer_qc.h5ad"
 OUTPUT_H5AD = PROCESSED_DIR / "breast_cancer_annotated.h5ad"
+PREPROCESSED_H5AD = PROCESSED_DIR / "breast_cancer_preprocessed.h5ad"
 
 # ──────────────────────────────────────────────────────────────────────────────
 # Canonical marker genes for breast cancer TME cell types
@@ -449,6 +452,8 @@ def main() -> None:
                         help="Leiden clustering resolution (default: 1.0).")
     parser.add_argument("--scan-resolution", action="store_true",
                         help="Scan resolutions and pick the best by silhouette score.")
+    parser.add_argument("--reprocess", action="store_true",
+                        help="Re-run preprocessing even if cached file exists.")
     args = parser.parse_args()
 
     if not INPUT_H5AD.exists():
@@ -462,7 +467,15 @@ def main() -> None:
     print(f"[INFO] Loaded: {adata.n_obs} cells × {adata.n_vars} genes")
 
     # Pipeline
-    adata = preprocess(adata)
+    if PREPROCESSED_H5AD.exists() and not args.reprocess:
+        print(f"[INFO] Loading cached preprocessed data from {PREPROCESSED_H5AD} …")
+        adata = sc.read_h5ad(PREPROCESSED_H5AD)
+        print(f"[INFO] Loaded: {adata.n_obs} cells × {adata.n_vars} genes")
+    else:
+        adata = preprocess(adata)
+        adata.write_h5ad(PREPROCESSED_H5AD)
+        print(f"[INFO] Saved preprocessed data → {PREPROCESSED_H5AD}")
+
     resolution = args.resolution
     if args.scan_resolution:
         resolution = find_best_resolution(adata)
