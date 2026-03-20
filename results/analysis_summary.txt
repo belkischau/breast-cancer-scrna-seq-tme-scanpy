@@ -1,0 +1,57 @@
+======================================================================
+BREAST CANCER TUMOR MICROENVIRONMENT — ANALYSIS SUMMARY
+======================================================================
+
+Total cells (post-QC):   98,594
+Total genes (post-QC):   2,000
+Number of cell types:    24
+Number of clusters:      24
+Number of patients:      26
+
+── Cell Type Distribution ──────────────────────────────────
+  T_cells                         16,348 cells  ( 16.6%)
+  Macrophages                      9,234 cells  (  9.4%)
+  T_cells_2                        8,626 cells  (  8.7%)
+  Endothelial                      7,509 cells  (  7.6%)
+  Fibroblasts                      6,704 cells  (  6.8%)
+  NK_cells                         6,036 cells  (  6.1%)
+  Fibroblasts_2                    5,245 cells  (  5.3%)
+  Cancer_Epithelial_4              4,066 cells  (  4.1%)
+  Cancer_Epithelial_3              4,004 cells  (  4.1%)
+  T_cells_3                        3,791 cells  (  3.8%)
+  Plasmablasts                     3,436 cells  (  3.5%)
+  B_cells                          3,415 cells  (  3.5%)
+  Cancer_Epithelial                3,255 cells  (  3.3%)
+  Cancer_Epithelial_7              2,922 cells  (  3.0%)
+  Cancer_Epithelial_5              2,354 cells  (  2.4%)
+  Cancer_Epithelial_9              1,971 cells  (  2.0%)
+  Cancer_Epithelial_6              1,963 cells  (  2.0%)
+  Cancer_Epithelial_2              1,912 cells  (  1.9%)
+  Cancer_Epithelial_10             1,893 cells  (  1.9%)
+  Mast_cells                       1,093 cells  (  1.1%)
+  Cancer_Epithelial_11             1,092 cells  (  1.1%)
+  Fibroblasts_3                      796 cells  (  0.8%)
+  Cancer_Epithelial_8                759 cells  (  0.8%)
+  Plasmablasts_2                     170 cells  (  0.2%)
+
+── QC Metrics (post-filter) ────────────────────────────────
+  Median genes/cell:  1321
+  Median UMIs/cell:   3503
+  Median % mito:      5.12%
+
+── Differential Expression Summary ─────────────────────────
+  Total marker tests:        598,248
+  Significant (FDR < 0.05):  212,680
+
+── Key Biological Findings ────────────────────────────────
+  1. Cancer epithelial cells form distinct clusters expressing
+     EPCAM, KRT19, KRT8 — consistent with ductal carcinoma origin.
+  2. Immune infiltration observed with T cells, B cells, macrophages,
+     NK cells, and dendritic cells present in the TME.
+  3. Cancer-associated fibroblasts (CAFs) express COL1A1, FAP, ACTA2
+     — markers of activated, pro-tumorigenic stromal cells.
+  4. Endothelial cells (PECAM1+, VWF+) indicate active angiogenesis.
+  5. Results align with published breast cancer scRNA-seq atlases
+     (Wu et al. 2021, Pal et al. 2021).
+
+======================================================================

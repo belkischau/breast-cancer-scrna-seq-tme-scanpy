@@ -185,7 +185,9 @@ def plot_feature_umaps(adata: ad.AnnData) -> None:
     print("\n[PLOT] Generating feature UMAP plots …")
 
     key_genes = ["EPCAM", "PTPRC", "CD3D", "CD68", "COL1A1", "PECAM1",
-                 "MKI67", "CD274"]
+                 "MKI67", "CD274",
+                 "MALAT1", "KRT18", "KRT19", "ADIRF", "RGCC", "HSPA8",
+                 "CYBA", "ARPC2"]
     raw_names = set(adata.raw.var_names if adata.raw else adata.var_names)
     available = [g for g in key_genes if g in raw_names]
 
